@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Image Tools</title>
+    <!-- SEO Meta Tags -->
+    <meta name="author" content="Mahmadul">
+    <meta name="description" content="Smart Image Tools — an offline image resizer and converter built by Mahmadul.">
+
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. Load Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 3. Add Favicon (Suggestion 3) -->
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233B82F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L7 7l5 5 5-5-5-5z' /%3E%3Cpath d='M7 7L2 12l5 5 5-5-5-5z' /%3E%3Cpath d='M17 7l5 5-5 5-5-5 5-5z' /%3E%3C/svg%3E">
+
+    <!-- 4. Configure Tailwind for 'class' based dark mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // This enables manual dark mode toggling
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        /* A few minor styles for the range input thumb */
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3B82F6;
+            /* blue-500 */
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -6px;
+            /* Center thumb on track */
+        }
+
+        input[type='range']::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3B82F6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-inter flex flex-col items-center justify-start min-h-screen p-4 sm:p-6 transition-colors duration-300">
+
+    <header class="header relative w-full max-w-lg mb-5 flex justify-center">
+        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-gray-800 dark:text-gray-200">
+            <!-- SVG Icon for Title -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-blue-600">
+                <path d="M12 2L7 7l5 5 5-5-5-5z" />
+                <path d="M7 7L2 12l5 5 5-5-5-5z" />
+                <path d="M17 7l5 5-5 5-5-5 5-5z" />
+            </svg>
+            Smart Image Tools
+        </h1>
+        <!-- Dark Mode Toggle Button -->
+        <button id="toggleDark" aria-label="Toggle dark mode"
+            class="absolute right-0 top-1/2 -translate-y-1/2 bg-transparent border border-gray-300 dark:border-gray-600 rounded-full w-10 h-10 text-xl text-gray-800 dark:text-gray-200 cursor-pointer transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            🌙
+        </button>
+    </header>
+
+    <!-- Main Tool Box -->
+    <div
+        class="tool-box bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-lg text-center transition-colors duration-300">
+
+        <!-- Upload Area -->
+        <div id="uploadBox" tabindex="0" role="button"
+            class="border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 sm:p-10 rounded-xl cursor-pointer text-gray-500 dark:text-gray-400 transition-all duration-300 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                class="mx-auto mb-3">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span class="font-medium">Click to upload</span> or drop image here
+        </div>
+        <input type="file" id="upload" accept="image/*" class="hidden" />
+
+        <!-- Image Preview -->
+        <img id="preview" alt="Image preview" class="mt-6 mb-2 max-w-full rounded-lg hidden shadow-md" />
+
+        <!-- Info & Error Messages -->
+        <p class="info-text text-sm text-gray-600 dark:text-gray-400" id="info"></p>
+        <p class="error text-red-500 mt-2 hidden font-medium" id="error"></p>
+
+        <!-- Form Controls -->
+        <!-- Aspect Ratio Lock (Suggestion 1) -->
+        <div class="flex justify-between items-center mt-5 mb-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Dimensions</label>
+            <button id="aspectLock" aria-label="Toggle aspect ratio lock"
+                class="flex items-center gap-1.5 p-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                <!-- Lock SVG -->
+                <svg id="lockIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="hidden">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <!-- Unlock SVG -->
+                <svg id="unlockIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="hidden">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                </svg>
+                <span id="lockLabel">Locked</span>
+            </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input type="number" id="width" placeholder="Width (px)"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 box-border transition-colors duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled />
+            <input type="number" id="height" placeholder="Height (px)"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 box-border transition-colors duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled />
+        </div>
+
+        <label for="format"
+            class="block text-left text-sm font-medium text-gray-700 dark:text-gray-300 mt-5 mb-2">Output Format</label>
+        <select id="format"
+            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 box-border transition-colors duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+        </select>
+
+        <div class="quality-box mt-5 text-left">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Compression Quality: <span class="quality-value float-right font-bold text-blue-600 dark:text-blue-400"
+                    id="qualityValue">90%</span>
+            </label>
+            <input type="range" id="quality" min="10" max="100" value="90"
+                class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled />
+        </div>
+
+        <p class="note mt-2 text-xs text-left text-gray-500 dark:text-gray-400 hidden" id="pngNote">ℹ️ PNG format
+            ignores compression quality (always lossless).</p>
+
+        <!-- Action Buttons -->
+        <button id="resizeBtn"
+            class="mt-6 w-full p-3 bg-blue-600 text-white border-none rounded-lg cursor-pointer transition-all duration-200 font-semibold text-base hover:bg-blue-700 active:transform active:scale-[0.98] disabled:bg-gray-400 dark:disabled:bg-gray-500 disabled:cursor-not-allowed"
+            disabled>
+            Process Image
+        </button>
+
+        <!-- Results Box with Download & Clear (Suggestion 2) -->
+        <div id="resultsBox" class="flex flex-col sm:flex-row gap-3 mt-4 hidden">
+            <a id="downloadLink"
+                class="w-full sm:w-1/2 bg-green-600 text-white no-underline px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:bg-green-700 text-center"
+                download="converted_image.jpg">
+                Download Image
+            </a>
+            <button id="clearBtn"
+                class="w-full sm:w-1/2 p-3 bg-gray-500 text-white border-none rounded-lg cursor-pointer transition-all duration-200 font-semibold text-base hover:bg-gray-600 active:transform active:scale-[0.98]">
+                Start Over
+            </button>
+        </div>
+    </div>
+
+    <footer class="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+        🔒 Works 100% offline — your image never leaves your device. <br>
+        © 2025 Mahmadul — Crafted with ❤️
+    </footer>
+
+
+    <script>
+        // --- Element References ---
+        const upload = document.getElementById('upload');
+        const uploadBox = document.getElementById('uploadBox');
+        const resizeBtn = document.getElementById('resizeBtn');
+        const preview = document.getElementById('preview');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const formatSelect = document.getElementById('format');
+        const toggleDark = document.getElementById('toggleDark');
+        const qualityInput = document.getElementById('quality');
+        const qualityValue = document.getElementById('qualityValue');
+        const pngNote = document.getElementById('pngNote');
+        const info = document.getElementById('info');
+        const error = document.getElementById('error');
+
+        // --- New Element References (Suggestions) ---
+        const aspectLock = document.getElementById('aspectLock');
+        const lockIcon = document.getElementById('lockIcon');
+        const unlockIcon = document.getElementById('unlockIcon');
+        const lockLabel = document.getElementById('lockLabel');
+        const resultsBox = document.getElementById('resultsBox');
+        const downloadLink = document.getElementById('downloadLink');
+        const clearBtn = document.getElementById('clearBtn');
+
+
+        // --- App State ---
+        let originalImage = null;
+        let currentObjectUrl = null;
+        let isAspectRatioLocked = true;
+        let isUpdatingDimensions = false; // Flag to prevent event loops
+
+        // --- Utility Functions ---
+
+        /**
+         * Resets the entire application to its initial state.
+         */
+        function resetApp() {
+            preview.style.display = 'none';
+            preview.src = '';
+
+            if (originalImage) {
+                originalImage.onload = null;
+                originalImage = null;
+            }
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = null;
+            }
+
+            info.textContent = '';
+            error.style.display = 'none';
+
+            widthInput.value = '';
+            heightInput.value = '';
+            widthInput.placeholder = 'Width (px)';
+            heightInput.placeholder = 'Height (px)';
+
+            formatSelect.selectedIndex = 0; // Back to JPEG
+            qualityInput.value = 90;
+            qualityValue.textContent = '90%';
+            pngNote.style.display = 'none';
+
+            resultsBox.style.display = 'none'; // Hide results
+            resizeBtn.style.display = 'block'; // Show process button
+            resizeBtn.textContent = 'Process Image';
+
+            // Disable all controls
+            [widthInput, heightInput, formatSelect, qualityInput, resizeBtn, aspectLock].forEach(el => el.disabled = true);
+
+            // Reset file input
+            upload.value = null;
+        }
+
+        // --- Event Listeners ---
+
+        // 🌙 Dark Mode Toggle
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            toggleDark.textContent = '☀️';
+        } else {
+            document.documentElement.classList.remove('dark');
+            toggleDark.textContent = '🌙';
+        }
+
+        toggleDark.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            if (isDark) {
+                localStorage.theme = 'dark';
+                toggleDark.textContent = '☀️';
+            } else {
+                localStorage.theme = 'light';
+                toggleDark.textContent = '🌙';
+            }
+        });
+
+        // Update quality %
+        qualityInput.addEventListener('input', () => {
+            qualityValue.textContent = qualityInput.value + '%';
+        });
+
+        // --- Upload & preview ---
+        uploadBox.addEventListener('click', () => upload.click());
+        uploadBox.addEventListener('keypress', e => {
+            if (e.key === 'Enter' || e.key === ' ') upload.click();
+        });
+
+        // Drag and drop events
+        uploadBox.addEventListener('dragover', e => {
+            e.preventDefault();
+            uploadBox.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-gray-700');
+        });
+        uploadBox.addEventListener('dragleave', e => {
+            e.preventDefault();
+            uploadBox.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-gray-700');
+        });
+        uploadBox.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadBox.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-gray-700');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // File input change
+        upload.addEventListener('change', e => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // Reset parts of the UI
+            error.style.display = 'none';
+            info.textContent = '';
+            resultsBox.style.display = 'none';
+            resizeBtn.style.display = 'block';
+
+            if (!file || !file.type.startsWith('image/')) {
+                preview.style.display = 'none';
+                preview.src = '';
+                error.textContent = 'Please select a valid image file.';
+                error.style.display = 'block';
+
+                // Disable controls
+                [widthInput, heightInput, formatSelect, qualityInput, resizeBtn, aspectLock].forEach(el => el.disabled = true);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+
+                if (originalImage) {
+                    originalImage.onload = null; // Revoke old onload
+                }
+
+                originalImage = new Image();
+                originalImage.src = e.target.result;
+
+                originalImage.onload = () => {
+                    // Warn user if image is extremely large
+                    if (originalImage.width * originalImage.height > 8000 * 8000) {
+                        error.textContent = '⚠️ This image is very large (' + originalImage.width + '×' + originalImage.height + 'px). Processing may be slow or fail on some browsers.';
+                        error.style.display = 'block';
+                    } else {
+                        error.style.display = 'none';
+                    }
+
+                    // Enable all controls
+                    [widthInput, heightInput, formatSelect, qualityInput, resizeBtn, aspectLock].forEach(el => el.disabled = false);
+
+                    // Set placeholders to original dimensions
+                    widthInput.placeholder = `Width (${originalImage.width}px)`;
+                    heightInput.placeholder = `Height (${originalImage.height}px)`;
+                    widthInput.value = ''; // Clear any previous value
+                    heightInput.value = ''; // Clear any previous value
+
+                    info.textContent = `Original: ${originalImage.width}×${originalImage.height}px`;
+
+                    pngNote.style.display = (formatSelect.value === 'image/png') ? 'block' : 'none';
+
+                    // Set default lock state
+                    isAspectRatioLocked = true;
+                    lockIcon.classList.remove('hidden');
+                    unlockIcon.classList.add('hidden');
+                    lockLabel.textContent = 'Locked';
+                    aspectLock.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-blue-700', 'dark:text-blue-300');
+                    aspectLock.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                };
+
+                originalImage.onerror = () => {
+                    error.textContent = 'Could not load image details.';
+                    error.style.display = 'block';
+                    preview.style.display = 'none';
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Format note toggle
+        formatSelect.addEventListener('change', () => {
+            pngNote.style.display = (formatSelect.value === 'image/png') ? 'block' : 'none';
+        });
+
+        // --- Aspect Ratio Lock Listeners (Suggestion 1) ---
+        aspectLock.addEventListener('click', () => {
+            isAspectRatioLocked = !isAspectRatioLocked;
+            lockIcon.classList.toggle('hidden', !isAspectRatioLocked);
+            unlockIcon.classList.toggle('hidden', isAspectRatioLocked);
+            lockLabel.textContent = isAspectRatioLocked ? 'Locked' : 'Unlocked';
+
+            // Toggle "active" styling for the lock button
+            aspectLock.classList.toggle('bg-blue-100', isAspectRatioLocked);
+            aspectLock.classList.toggle('dark:bg-blue-900', isAspectRatioLocked);
+            aspectLock.classList.toggle('text-blue-700', isAspectRatioLocked);
+            aspectLock.classList.toggle('dark:text-blue-300', isAspectRatioLocked);
+            // Toggle "inactive" styling
+            aspectLock.classList.toggle('bg-gray-100', !isAspectRatioLocked);
+            aspectLock.classList.toggle('dark:bg-gray-700', !isAspectRatioLocked);
+            aspectLock.classList.toggle('text-gray-700', !isAspectRatioLocked);
+            aspectLock.classList.toggle('dark:text-gray-300', !isAspectRatioLocked);
+        });
+
+        widthInput.addEventListener('input', () => {
+            if (isUpdatingDimensions || !isAspectRatioLocked || !originalImage) return;
+            isUpdatingDimensions = true;
+
+            const width = parseInt(widthInput.value);
+            if (width > 0) {
+                const originalRatio = originalImage.width / originalImage.height;
+                heightInput.value = Math.round(width / originalRatio);
+            } else {
+                heightInput.value = ''; // Clear if width is cleared
+            }
+            isUpdatingDimensions = false;
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (isUpdatingDimensions || !isAspectRatioLocked || !originalImage) return;
+            isUpdatingDimensions = true;
+
+            const height = parseInt(heightInput.value);
+            if (height > 0) {
+                const originalRatio = originalImage.width / originalImage.height;
+                widthInput.value = Math.round(height * originalRatio);
+            } else {
+                widthInput.value = ''; // Clear if height is cleared
+            }
+            isUpdatingDimensions = false;
+        });
+
+        // --- "Start Over" Button Listener (Suggestion 2) ---
+        clearBtn.addEventListener('click', resetApp);
+
+
+        // --- Resize logic ---
+        resizeBtn.addEventListener('click', () => {
+            if (!originalImage || !originalImage.src) {
+                error.textContent = 'Please upload an image first!';
+                error.style.display = 'block';
+                return;
+            }
+
+            resizeBtn.disabled = true;
+            resizeBtn.textContent = 'Processing...';
+
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Determine target dimensions
+                let targetWidth = parseInt(widthInput.value);
+                let targetHeight = parseInt(heightInput.value);
+                const originalRatio = originalImage.width / originalImage.height;
+
+                // This logic is now simpler because the input listeners handle the ratio
+                // But we keep it as a fallback for when ratio is unlocked or boxes are empty
+                if (targetWidth && !targetHeight) {
+                    targetHeight = Math.round(targetWidth / originalRatio);
+                } else if (!targetWidth && targetHeight) {
+                    targetWidth = Math.round(targetHeight * originalRatio);
+                } else if (!targetWidth && !targetHeight) {
+                    // Neither given, use original
+                    targetWidth = originalImage.width;
+                    targetHeight = originalImage.height;
+                }
+                // Both given, use both (aspect ratio might change if unlocked)
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                // Draw image to canvas
+                ctx.drawImage(originalImage, 0, 0, targetWidth, targetHeight);
+
+                const mimeType = formatSelect.value;
+                const quality = mimeType === "image/png" ? 1.0 : qualityInput.value / 100;
+
+                // Convert canvas to blob
+                canvas.toBlob(blob => {
+                    if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+                    currentObjectUrl = URL.createObjectURL(blob);
+
+                    preview.src = currentObjectUrl; // Show the new, processed image
+                    preview.style.display = "block";
+
+                    downloadLink.href = currentObjectUrl;
+                    const extension = mimeType.split("/")[1];
+                    downloadLink.download = `processed_image_${Date.now()}.${extension}`;
+                    
+                    resultsBox.style.display = "flex"; // Show results box
+                    resizeBtn.style.display = "none"; // Hide process button
+
+                    const sizeKB = (blob.size / 1024).toFixed(1);
+                    info.textContent = `New Size: ${targetWidth}×${targetHeight}px — ${sizeKB} KB`;
+
+                    resizeBtn.disabled = false;
+                    resizeBtn.textContent = 'Process Image';
+
+                }, mimeType, quality);
+
+            } catch (err) {
+                console.error('Processing failed:', err);
+                error.textContent = 'An error occurred during processing. The image might be too large.';
+                error.style.display = 'block';
+                
+                resizeBtn.style.display = 'block'; // Ensure process button is visible
+                resultsBox.style.display = 'none'; // Hide results
+                
+                resizeBtn.disabled = false;
+                resizeBtn.textContent = 'Process Image';
+            }
+        });
+
+        // Cleanup blob URL on page unload
+        window.addEventListener('unload', () => {
+            if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+        });
+    </script>
+</body>
+
+</html>
