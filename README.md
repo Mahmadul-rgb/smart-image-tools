@@ -10,7 +10,7 @@ Smart Image Tools is a free, offline web tool to **resize, compress, and convert
 - Fast, secure, and easy to use  
 
 ## 🌐 Live Demo
-👉 [Open Smart Image Tools](https://mahmadul-rgb.github.io/)
+👉 [Open Smart Image Tools](https://mahmadul-rgb.github.io/smart-image-tools)
 
 ## 💡 How It Works
 1. Upload your image  
