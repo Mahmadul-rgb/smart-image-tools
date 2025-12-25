@@ -88,8 +88,8 @@
         class="tool-box bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-lg text-center transition-colors duration-300">
 
         <!-- Upload Area -->
-        <div id="uploadBox" tabindex="0" role="button"
-            class="border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 sm:p-10 rounded-xl cursor-pointer text-gray-500 dark:text-gray-400 transition-all duration-300 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+        <div id="uploadBox" tabindex="0" role="button" class="border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 sm:p-10 rounded-xl cursor-pointer text-gray-500 dark:text-gray-400 transition-all duration-300 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 relative h-56 sm:h-64 overflow-hidden
+">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                 class="mx-auto mb-3">
@@ -98,12 +98,10 @@
                 <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <span class="font-medium">Click to upload</span> or drop image here
+            <img id="preview" alt="Image preview"
+                class="absolute inset-0 w-full h-full object-contain rounded-lg hidden" />
         </div>
         <input type="file" id="upload" accept="image/*" class="hidden" />
-
-        <!-- Image Preview -->
-        <img id="preview" alt="Image preview" class="mt-6 mb-2 max-w-full rounded-lg hidden shadow-md" />
-
         <!-- Info & Error Messages -->
         <p class="info-text text-sm text-gray-600 dark:text-gray-400" id="info"></p>
         <p class="error text-red-500 mt-2 hidden font-medium" id="error"></p>
@@ -222,6 +220,21 @@
         let currentObjectUrl = null;
         let isAspectRatioLocked = true;
         let isUpdatingDimensions = false; // Flag to prevent event loops
+        function showUploadPlaceholder(show) {
+            const icon = uploadBox.querySelector('svg');
+            const text = uploadBox.querySelector('span');
+
+            if (show) {
+                icon.classList.remove('hidden');
+                text.classList.remove('hidden');
+                preview.classList.add('hidden');
+                preview.src = '';
+            } else {
+                icon.classList.add('hidden');
+                text.classList.add('hidden');
+                preview.classList.remove('hidden');
+            }
+        }
 
         // --- Utility Functions ---
 
@@ -229,8 +242,7 @@
          * Resets the entire application to its initial state.
          */
         function resetApp() {
-            preview.style.display = 'none';
-            preview.src = '';
+            showUploadPlaceholder(true);
 
             if (originalImage) {
                 originalImage.onload = null;
@@ -293,7 +305,10 @@
         });
 
         // --- Upload & preview ---
-        uploadBox.addEventListener('click', () => upload.click());
+        uploadBox.addEventListener('click', () => {
+            upload.value = null;   // 🔥 force fresh upload every time
+            upload.click();
+        });
         uploadBox.addEventListener('keypress', e => {
             if (e.key === 'Enter' || e.key === ' ') upload.click();
         });
@@ -328,6 +343,11 @@
             info.textContent = '';
             resultsBox.style.display = 'none';
             resizeBtn.style.display = 'block';
+            // Show preview & hide upload UI
+            preview.classList.remove('hidden');
+            uploadBox.querySelector('svg').classList.add('hidden');
+            uploadBox.querySelector('span').classList.add('hidden');
+
 
             if (!file || !file.type.startsWith('image/')) {
                 preview.style.display = 'none';
@@ -343,7 +363,8 @@
             const reader = new FileReader();
             reader.onload = e => {
                 preview.src = e.target.result;
-                preview.style.display = "block";
+                preview.classList.remove('hidden');
+
 
                 if (originalImage) {
                     originalImage.onload = null; // Revoke old onload
@@ -501,7 +522,7 @@
                     downloadLink.href = currentObjectUrl;
                     const extension = mimeType.split("/")[1];
                     downloadLink.download = `processed_image_${Date.now()}.${extension}`;
-                    
+
                     resultsBox.style.display = "flex"; // Show results box
                     resizeBtn.style.display = "none"; // Hide process button
 
@@ -517,10 +538,10 @@
                 console.error('Processing failed:', err);
                 error.textContent = 'An error occurred during processing. The image might be too large.';
                 error.style.display = 'block';
-                
+
                 resizeBtn.style.display = 'block'; // Ensure process button is visible
                 resultsBox.style.display = 'none'; // Hide results
-                
+
                 resizeBtn.disabled = false;
                 resizeBtn.textContent = 'Process Image';
             }
@@ -532,15 +553,15 @@
         });
     </script>
     <hr>
-<h3 style="text-align:center;">Share This Tool 🔗</h3>
-<div style="text-align:center; margin-bottom:20px;">
-  <a href="https://api.whatsapp.com/send?text=Try%20this%20free%20Smart%20Image%20Tools!%20https://mahmadul-rgb.github.io/smart-image-tools"
-     target="_blank">📱 WhatsApp</a> |
-  <a href="https://www.facebook.com/sharer/sharer.php?u=https://mahmadul-rgb.github.io/smart-image-tools"
-     target="_blank">📘 Facebook</a> |
-  <a href="https://twitter.com/intent/tweet?text=Free%20Smart%20Image%20Tools!%20Resize%2C%20compress%20%26%20convert%20instantly%20👉%20https://mahmadul-rgb.github.io/smart-image-tools"
-     target="_blank">🐦 Twitter / X</a>
-</div>
+    <h3 style="text-align:center;">Share This Tool 🔗</h3>
+    <div style="text-align:center; margin-bottom:20px;">
+        <a href="https://api.whatsapp.com/send?text=Try%20this%20free%20Smart%20Image%20Tools!%20https://mahmadul-rgb.github.io/smart-image-tools"
+            target="_blank">📱 WhatsApp</a> |
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://mahmadul-rgb.github.io/smart-image-tools"
+            target="_blank">📘 Facebook</a> |
+        <a href="https://twitter.com/intent/tweet?text=Free%20Smart%20Image%20Tools!%20Resize%2C%20compress%20%26%20convert%20instantly%20👉%20https://mahmadul-rgb.github.io/smart-image-tools"
+            target="_blank">🐦 Twitter / X</a>
+    </div>
 </body>
 
 </html>
